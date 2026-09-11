@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+body {
+  @apply dark:bg-dark-background
+ 
+}
+*{
+    font-family: 'Poppins', sans-serif;
+}
+
+@theme{
+
+  --color-dark: #1A1A1A;
+  --color-font: #333333;
+  --color-primary:#0742A6;
+  --color-secondary: #EFA434;
+
+  --color-dark-background: #020617;
+  --color-dark-card: #0F172A;
+  --color-dark-text: #F8FAFC;
+  --color-dark-muted: #94A3B8;
+  --color-dark-border: #1E293B;
+  --color-dark-alternate: #070c27;
+
+}
+
+
+/* ----------------------------moving border---------------------------------- */
+
+.wave-border {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 70deg,
+    rgba(59,130,246,0.95) 95deg,
+    rgba(19,63,227,0.95) 120deg,
+    rgba(242,5,92,0.95) 145deg,
+    transparent 170deg,
+    transparent 360deg
+  );
+
+  filter: blur(10px);
+
+  animation: waveBorderSpin 2.6s linear infinite;
+  animation-play-state: paused; /* Initially stop */
+  opacity: 0;                   /* Hide initially */
+  transition: opacity 0.3s ease;
+}
+
+.group:hover .wave-border {
+  animation-play-state: running; /* Start on hover */
+  opacity: 1;                    /* Show on hover */
+}
+
+@keyframes waveBorderSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* -----------------------------------------input element--------------------------------------- */
+/* 
+@layer utilities {
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+}
+  */
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+.animate-toast-progress {
+  width: 100%;
+  animation: toast-progress 3s linear backwards;
+}
+
+/* -----------------------------------lodaer------------------------------------------------ */
+
+
+@keyframes loaderDot {
+  0% {
+    background-color: #3b82f6;
+    opacity: 0.3;
+  }
+
+  50% {
+    background-color: #06b6d4;
+    opacity: 1;
+  }
+
+  100% {
+    background-color: #3b82f6;
+    opacity: 0.3;
+  }
+}
