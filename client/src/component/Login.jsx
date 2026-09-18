@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext"
 import { useToast } from "../context/ToastContext";
 
 
-const Login = ({onClose}) => {
+const Login = ({onClose, redirectTo = "/dashboard" }) => {
   const navigate = useNavigate()
   const [submitted, setSubmitted] = useState(false)
   const [formData, setFormData] = useState({ email: "", password: ""})
@@ -53,7 +53,7 @@ const Login = ({onClose}) => {
       showToast("success", "Login successful!")
 
       onClose()
-      navigate("/dashboard")
+      navigate(redirectTo)
     }catch(error){
       console.error("Login error:", error)
       if(error.response){

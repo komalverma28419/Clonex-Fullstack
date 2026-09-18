@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useContext } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import logo from '../assets/images/logo.png'
 import darkLogo from '../assets/images/darkLogo.png'
@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLogin } from '../context/LoginContext'
 
 
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [featureOpen, setFeatureOpen] = useState(false)
@@ -22,6 +23,17 @@ const Navbar = () => {
   const { openLogin } = useLogin();
   const navigate  =  useNavigate()
 
+  const getInitials = (name) => {
+    if (!name) return "U";
+
+    const words = name.trim().split(/\s+/);
+
+    if (words.length === 1) {
+      return words[0][0].toUpperCase();
+    }
+
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
 
   const handleClose = () =>{
     setIsOpen(false)
@@ -105,7 +117,17 @@ const Navbar = () => {
                         type="button"
                         className="h-12 w-12 rounded-full bg-gray-300 text-3xl text-primary flex items-center justify-center font-semibold uppercase cursor-pointer"
                       >
-                        {user?.Username?.charAt(0) || "U"}
+                        {user?.profilePhoto ? (
+                          <img
+                            src={user.profilePhoto}
+                            alt={user.Username}
+                            className="h-full w-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-primary uppercase">
+                            {getInitials(user?.Username)}
+                          </div>
+                        )}
                       </button>
                     </div>
 
@@ -124,7 +146,17 @@ const Navbar = () => {
               {isAuthenticated && (
                 <button type="button" onClick={() => navigate("/dashboard")}
                   className="h-10 w-10 rounded-full bg-gray-300 text-primary flex items-center justify-center font-semibold uppercase cursor-pointer">
-                  {user?.Username?.charAt(0) || "U"}
+                  {user?.profilePhoto ? (
+                    <img
+                      src={user.profilePhoto}
+                      alt={user.Username}
+                      className="h-full w-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-primary uppercase">
+                      {getInitials(user?.Username)}
+                    </div>
+                  )}
                 </button>
               )}
               <button type="button" className="cursor-pointer" onClick={toggleMenu}>

@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        profilePhoto: {
+            type: String,
+            default: "",
+        },
+        profilePhotoPublicId: {
+            type: String,
+            default: "",
+        },
         termsAccepted: {
             type: Boolean,
             required: true,

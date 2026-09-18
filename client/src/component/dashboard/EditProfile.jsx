@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import ProfileInput from "./ProfileInput";
 import Button from "../ui/Button";
@@ -7,14 +7,119 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 
 const EditProfile = ({ user, onBack, onProfileUpdate }) => {
-  const {token} = useAuth()
+  const {token, setUser} = useAuth()
   const {showToast} = useToast()
-  const [loading, setLoading] = useState(false)
+  const [isPhotoLoading, setIsPhotoLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
-    name: user.Username || "",
+    Username: user.Username || "",
     email: user.email || "",
     phone: user.phone || "",
   })
+  const getInitials = (name) => {
+    if (!name) return "U";
+
+    const words = name.trim().split(/\s+/);
+
+    if (words.length === 1) {
+      return words[0][0].toUpperCase();
+    }
+
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return
+    if (!file.type.startsWith("image/")) {
+      showToast("error", "Please select an image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("error", "Image size should be less than 5MB");
+      return;
+    }
+
+    try {
+      setIsPhotoLoading(true);
+      const data = new FormData();
+      data.append("profilePhoto", file);
+
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/profile-photo",
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setUser(response.data.user);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      )
+      onProfileUpdate(response.data.user);
+      showToast("success", "Profile photo updated successfully");
+    } catch (error) {
+      console.error("Photo upload error:", error);
+
+      showToast(
+        "error",
+        error.response?.data?.message || "Failed to upload photo"
+      );
+    } finally {
+      setIsPhotoLoading(false);
+    }
+  }
+
+  const handleDeletePhoto = async () => {
+    if (!user?.profilePhoto) {
+      showToast("error", "No profile photo to delete");
+      return false;
+    }
+
+    try {
+      setIsPhotoLoading(true)
+
+      const response = await axios.delete(
+        "http://localhost:5000/api/auth/profile-photo",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setUser(response.data.user);
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      );
+
+      onProfileUpdate(response.data.user);
+
+      showToast("success", "Profile photo deleted successfully");
+
+      return true;
+    } catch (error) {
+      console.error("Delete photo error:", error);
+
+      showToast(
+        "error",
+        error.response?.data?.message || "Failed to delete photo"
+      );
+
+      return false;
+    } finally {
+      setIsPhotoLoading(false)
+    }
+  }
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,7 +134,7 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
     e.preventDefault()
 
     try{
-      setLoading(true)
+      setIsProfileLoading(true)
       const response = await axios.put("http://localhost:5000/api/auth/profile",
         formData,
         {
@@ -38,13 +143,15 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
           }
         }
       )
-      onProfileUpdate(response.data.user)
-      showToast("success", "Profile updated successfully")
-    }catch(error){
+      setUser(response.data.user);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      onProfileUpdate(response.data.user);
+      showToast("success", "Profile updated successfully");
+          }catch(error){
       console.error("Profile update error", error)
       showToast("error", "Failed to update profile")
     }finally{
-      setLoading(false)
+      setIsProfileLoading(false)
     }
   }
 
@@ -65,13 +172,41 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
       <div className="rounded-2xl bg-white p-6 shadow-md dark:bg-dark-card md:p-8 dark:border dark:border-dark-border">
         {/*-------------------------------- Avatar------------------------- */}
         <div className="text-center">
-          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-primary text-4xl font-bold text-white">
-            {user.Username.charAt(0).toUpperCase()}
+          <div className="mx-auto h-28 w-28 overflow-hidden rounded-full bg-primary">
+            {user.profilePhoto ? (
+              <img
+                src={user.profilePhoto}
+                alt={user.Username}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-white">
+                {getInitials(user.Username)}
+              </div>
+            )}
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoSelect}
+            className="hidden"
+          />
+
 
           <div className="mt-5 flex justify-center gap-3">
-            <Button text="Choose Photo" variant="secondary" className="border border-primary text-primary hover:bg-primary "/>
-            <Button text="Delete" variant="secondary" className="border border-red-500 hover:bg-red-500 text-red-500 hover:text-white"/>
+            <Button
+              text={isPhotoLoading ? "Uploading..." : "Choose Photo"}
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isPhotoLoading}
+              className="border border-primary text-primary hover:bg-primary hover:text-white"
+            />
+            {user?.profilePhoto && (
+              <Button text="Delete" variant="secondary" onClick={() => setShowDeleteModal(true)}
+                className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+              />
+            )}
           </div>
         </div>
 
@@ -86,16 +221,45 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
           <div className="mt-8 text-center">
             <button
               type="submit"
-              disabled={loading}
+              disabled={isProfileLoading}
               className="rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Updating..." : "Update"}
+              {isProfileLoading ? "Updating..." : "Update"}
             </button>
           </div>
         </form>
 
       </div>
 
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-[#1F2937]">
+
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Delete Profile Photo?
+            </h3>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Are you sure you want to remove your profile photo? You can upload a new one anytime.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button text="Cancel" variant="secondary" onClick={() => setShowDeleteModal(false)}
+                className="border border-gray-300"/>
+              <Button
+                text={isPhotoLoading ? "Deleting..." : "Delete"}
+                onClick={async () => {
+                  const success = await handleDeletePhoto();
+
+                  if (success) {
+                    setShowDeleteModal(false);
+                  }
+                }}
+                disabled={isPhotoLoading}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              />
+            </div>
+
+          </div>
+        </div>
+      )}
     </section>
   )
 }

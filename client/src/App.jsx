@@ -21,6 +21,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ProtectedRoute from './component/auth/ProtectedRoute'
 import VerifyEmail from './component/VerifyEmail'
+import Checkout from './pages/Checkout'
 
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
             <DashboardPage/>
           </ProtectedRoute>
          }/>
+         <Route path="/checkout" element={<Checkout/>}/>
          <Route path='/verify-email' element={<VerifyEmail/>}/>
       </Routes>
       <Footer/>

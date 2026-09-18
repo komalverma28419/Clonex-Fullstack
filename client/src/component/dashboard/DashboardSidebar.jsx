@@ -16,8 +16,23 @@ const DashboardSidebar = ({ user, activeView, onViewChange, onLogout,}) => {
       <div className="relative z-10">
         <div className="border-b border-gray-100 pb-6 text-center dark:border-dark-border">
           <div className="relative mx-auto mb-3 h-24 w-24">
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-5xl font-semibold text-white">
-              {user.Username.charAt(0).toUpperCase()}
+            <div className="h-full w-full overflow-hidden rounded-full bg-primary">
+              {user?.profilePhoto ? (
+                <img src={user.profilePhoto} alt={user.Username} 
+                className="h-full w-full object-cover"/>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-white">
+                  {user?.Username
+                    ? user.Username
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((word) => word[0])
+                        .join("")
+                        .toUpperCase()
+                    : "U"}
+                </div>
+              )}
             </div>
             <span className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-dark-alternate">
               <CheckCircle2 size={20} className="fill-green-500 text-white"/>
