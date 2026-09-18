@@ -1,23 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowRight, ShoppingCart, LayoutDashboard} from "lucide-react";
 import DashboardCard from "./DashboardCard";
-import Button from "../ui/Button";
+import Button from "../ui/Button"
+import axios from "axios"
 
 
-const planCards = [
-  {
-    title: "Current Plan",
-    badge: "Active",
-    heading: "Don't have Plan",
-    description: "Choose a plan to start calling.",
-  },
-  {
-    title: "Upcoming Plan",
-    badge: "0",
-    heading: "Don't have plan",
-    description: "No upcoming subscription.",
-  },
-]
 const WalletData = [
     {label:"Total Am", value:"₹ 0"},
     {label:"Used Amt", value:"₹ 0"},
@@ -25,6 +12,32 @@ const WalletData = [
 ]
 
 const DashboardOverview = ({ user, onWallet }) => {
+  const [subscription, setSubscription] = useState(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true)
+
+  useEffect(() => {
+    const fetchCurrentSubscription = async () =>{
+      try{
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/subscription/current`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          }
+        )
+        setSubscription(response.data.subscription)
+      }catch(error){
+        if(error.response?.status !== 400){
+          console.error("Subscription fetch error:", error)
+        }
+        setSubscription(null)
+      }finally{
+        setIsLoadingSubscription(false)
+      }
+    }
+    fetchCurrentSubscription()
+  }, [])
+  
   return (
     <section className="">
 
@@ -37,12 +50,38 @@ const DashboardOverview = ({ user, onWallet }) => {
         {/* Top Cards */}
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {planCards.map((card) => (
+          {/* {planCards.map((card) => (
               <DashboardCard key={card.title} title={card.title} badge={card.badge}>
               <p className="mt-8 text-lg font-semibold">{card.heading}</p>
               <p className="mt-1 text-sm text-gray-500">{card.description}</p>
               </DashboardCard>
-          ))}
+          ))} */}
+          <DashboardCard title="Current Plan" 
+          badge={ isLoadingSubscription ? "Loading..." : subscription ? "Active" : "InActive"}>
+            {isLoadingSubscription ? (
+              <p className="mt-8 text-sm text-gray-500"> Loading subscription...</p>
+            ) : subscription ? (
+              <>
+                <p className="mt-8 text-lg font-semibold">{subscription.planName}</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {subscription.billing === "monthly" ? "Monthly billing" : "Annual billing"}
+                </p>
+                <p className="mt-3 text-sm font-medium">
+                  ₹{Number(subscription.amount).toLocaleString("en-IN")}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-8 text-lg font-semibold">Don't have Plan</p>
+                <p className="mt-1 text-sm text-gray-500">Choose a plan to start calling.</p>
+              </>
+            )
+            }
+          </DashboardCard>
+            <DashboardCard title="Upcoming Plan" badge="0">
+              <p className="mt-8 text-lg font-semibold">Don't have plan</p>
+              <p className="mt-1 text-sm text-gray-500">No upcoming subscription.</p>
+            </DashboardCard>
           {/*---------------------------------------- Wallet---------------------------------------- */}
           <button type="button" onClick={onWallet}
             className="rounded-2xl border border-green-100 bg-green-50 p-6 text-left shadow-md transition hover:shadow-lg dark:border-green-900 dark:bg-green-950/30">

@@ -37,7 +37,7 @@ const PaymentSummary = ({ plan, billing }) => {
     setIsPaymentLoading(true);
 
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/payment/create-order}`,
+      `${import.meta.env.VITE_API_URL}/api/payment/create-order`,
       {
         amount: grandTotal,
         planId: plan.id,
@@ -98,6 +98,7 @@ const PaymentSummary = ({ plan, billing }) => {
           console.error("Verification error:", error);
 
           showToast( "error", error.response?.data?.message ||"Payment verification failed.")
+          
         } finally {
           setIsPaymentLoading(false);
         }

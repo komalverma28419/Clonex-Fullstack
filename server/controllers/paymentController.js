@@ -102,11 +102,14 @@ const verifyPayment = async (req, res) => {
       subscription,
     });
   } catch (error) {
-    console.error("Verify payment error:", error);
+    console.error("========== VERIFY PAYMENT ERROR ==========");
+  console.error(error);
+  console.error("Message:", error.message);
+  console.error("Stack:", error.stack);
 
-    return res.status(500).json({
-      success: false,
-      message: "Payment verification failed.",
+  return res.status(500).json({
+    success: false,
+    message: error.message || "Payment verification failed.",
     });
   }
 }
