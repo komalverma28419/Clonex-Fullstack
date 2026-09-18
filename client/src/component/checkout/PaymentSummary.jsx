@@ -5,10 +5,12 @@ import { FcGoogle } from "react-icons/fc"
 import axios from "axios"
 import {useAuth} from "../../context/AuthContext"
 import{useToast} from "../../context/ToastContext"
+import { useNavigate } from "react-router-dom"
 
 const PaymentSummary = ({ plan, billing }) => {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const [isPaymentLoading, setIsPaymentLoading] = useState(false); 
   const [sameAddress, setSameAddress] = useState(true)
   if (!plan) {
@@ -35,7 +37,7 @@ const PaymentSummary = ({ plan, billing }) => {
     setIsPaymentLoading(true);
 
     const response = await axios.post(
-      "http://localhost:5000/api/payment/create-order",
+      `${import.meta.env.VITE_API_URL}/api/payment/create-order}`,
       {
         amount: grandTotal,
         planId: plan.id,
@@ -69,10 +71,36 @@ const PaymentSummary = ({ plan, billing }) => {
         color: "#your-primary-color",
       },
 
-      handler: function (paymentResponse) {
-        console.log("Payment successful:", paymentResponse);
+      handler: async function (paymentResponse) {
+        try {
+          const verifyResponse = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/payment/verify-payment`,
+            {
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+              planId: plan.id,
+              planName: plan.title,
+              billing,
+              amount: grandTotal,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          )
 
-        showToast("success", "Payment completed successfully!");
+          console.log("Payment verified:", verifyResponse.data)
+          showToast("success", "Subscription activated successfully!")
+          navigate("/dashboard")
+        } catch (error) {
+          console.error("Verification error:", error);
+
+          showToast( "error", error.response?.data?.message ||"Payment verification failed.")
+        } finally {
+          setIsPaymentLoading(false);
+        }
       },
 
       modal: {
@@ -86,7 +114,6 @@ const PaymentSummary = ({ plan, billing }) => {
 
     razorpay.open();
 
-    setIsPaymentLoading(false);
   } catch (error) {
     console.error("Payment error:", error);
 
