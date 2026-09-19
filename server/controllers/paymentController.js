@@ -3,6 +3,7 @@ const crypto = require("crypto")
 const Subscription = require("../models/Subscription")
 
 const createOrder = async (req, res) => {
+  console.log("CREATE ORDER ROUTE HIT");
   try {
     const { amount, planId, billing } = req.body
     console.log("Payment request:", {
