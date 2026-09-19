@@ -3,7 +3,6 @@ const crypto = require("crypto")
 const Subscription = require("../models/Subscription")
 
 const createOrder = async (req, res) => {
-  console.log("CREATE ORDER ROUTE HIT");
   try {
     const { amount, planId, billing } = req.body
     console.log("Payment request:", {
@@ -157,4 +156,73 @@ const verifyPayment = async (req, res) => {
 };
 
 
-module.exports = { createOrder, verifyPayment }
+const cancelPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id } = req.body;
+
+    const subscription = await Subscription.findOne({
+      razorpayOrderId: razorpay_order_id,
+      user: req.user.userId,
+      status: "created",
+    });
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found.",
+      });
+    }
+
+    subscription.status = "cancelled";
+    await subscription.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment cancelled.",
+    });
+
+  } catch (error) {
+    console.error("Cancel payment error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to cancel payment.",
+    });
+  }
+};
+
+const failPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id } = req.body;
+
+    const subscription = await Subscription.findOne({
+      razorpayOrderId: razorpay_order_id,
+      user: req.user.userId,
+      status: "created",
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found.",
+      });
+    }
+
+    subscription.status = "failed";
+    await subscription.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment failed.",
+    });
+
+  } catch (error) {
+    console.error("Failed payment error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update payment status.",
+    });
+  }
+};
+
+module.exports = { createOrder, verifyPayment, cancelPayment, failPayment }

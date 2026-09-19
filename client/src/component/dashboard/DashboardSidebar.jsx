@@ -53,6 +53,11 @@ const DashboardSidebar = ({ user, activeView, onViewChange, onLogout,}) => {
           Manage Profile
         </Button>
 
+        <Button icon={<Phone size={17} />} onClick={() => onViewChange("callLogs")} iconPosition="left"
+         variant="none" className={`w-full ${activeView === "callLogs" ? "bg-secondary" : "bg-secondary/80 hover:opacity-90"}`}>
+         Call Logs
+        </Button>
+
         <Button icon={<Wallet size={17} />} iconPosition="left" onClick={() => onViewChange("wallet")} variant="none" className="bg-green-500 hover:bg-green-600 w-full text-white">
           Wallet (₹ 0)
         </Button>

@@ -97,20 +97,59 @@ const PaymentSummary = ({ plan, billing }) => {
         } catch (error) {
           console.error("Verification error:", error);
           showToast( "error", error.response?.data?.message ||"Payment verification failed.")
-          
         } finally {
           setIsPaymentLoading(false);
         }
       },
 
       modal: {
-        ondismiss: function () {
+      ondismiss: async function () {
+        try {
+          await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/payment/cancel`,
+            {
+              razorpay_order_id: order.id,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          showToast("error", "Payment cancelled.");
+        } catch (error) {
+          console.error("Cancel payment error:", error);
+        } finally {
           setIsPaymentLoading(false);
-        },
+        }
       },
-    };
+    },
+    }
 
     const razorpay = new window.Razorpay(options);
+
+    razorpay.on("payment.failed", async function (response) {
+      try {
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/payment/failed`,
+          {
+            razorpay_order_id: order.id,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        showToast("error", "Payment failed.");
+      } catch (error) {
+        console.error("Failed payment status error:", error);
+      } finally {
+        setIsPaymentLoading(false);
+      }
+    });
 
     razorpay.open();
 

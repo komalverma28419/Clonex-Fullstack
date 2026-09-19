@@ -36,6 +36,20 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        wallet: {
+            totalAmount: {
+                type: Number,
+                default: 0
+            },
+            usedAmount: {
+                type: Number,
+                default: 0
+            },
+            availableAmount: {
+                type: Number,
+                default: 0
+            }
+        },
         termsAccepted: {
             type: Boolean,
             required: true,

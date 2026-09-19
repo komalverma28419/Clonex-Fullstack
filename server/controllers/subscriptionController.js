@@ -4,14 +4,24 @@ const getCurrentSubscription = async (req, res) => {
   try {
     const subscription = await Subscription.findOne({
       user: req.user.userId,
-      status: "active",
     }).sort({ createdAt: -1 });
 
     if (!subscription) {
-      return res.status(404).json({
-        success: false,
-        message: "No active subscription found",
+      return res.status(200).json({
+        success: true,
+        subscription: null,
       });
+    }
+
+    const today = new Date();
+
+    if (
+      subscription.status === "active" &&
+      subscription.endDate &&
+      subscription.endDate <= today
+    ) {
+      subscription.status = "expired";
+      await subscription.save();
     }
 
     return res.status(200).json({

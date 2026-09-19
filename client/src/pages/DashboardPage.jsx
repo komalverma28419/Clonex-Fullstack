@@ -7,6 +7,7 @@ import WalletDetails from "../component/dashboard/WalletDetails";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import Loader from "../component/ui/Loader";
+import CallLogs from "../component/dashboard/CallLogs";
 
 
 const DashboardPage = () => {
@@ -67,6 +68,9 @@ const DashboardPage = () => {
           )}
           {activeView === "wallet" && (
             <WalletDetails onBack={() => setActiveView("dashboard")}/>
+          )}
+          {activeView === "callLogs" && (
+            <CallLogs />
           )}
         </main>
       </div>
