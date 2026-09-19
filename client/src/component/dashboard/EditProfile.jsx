@@ -135,7 +135,7 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
 
     try{
       setIsProfileLoading(true)
-      const response = await axios.put("http://localhost:5000/api/auth/profile",
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/api/auth/profile`,
         formData,
         {
           headers: {

@@ -178,7 +178,7 @@ const DashboardOverview = ({ user, onWallet }) => {
         </div>
 
         {/*------------------------------------------ Empty State---------------------------- */}
-        <CallingDashboard/>
+        {/* <CallingDashboard/> */}
         
       </div>
 

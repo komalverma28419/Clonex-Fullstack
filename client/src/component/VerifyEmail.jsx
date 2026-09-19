@@ -52,7 +52,7 @@ const VerifyEmail = () => {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/verify-email",
+        `${import.meta.env.VITE_API_URL}/api/auth/verify-email`,
         {
           email,
           otp,
@@ -88,7 +88,7 @@ const VerifyEmail = () => {
       setResendLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/resend-otp",
+        `${import.meta.env.VITE_API_URL}/api/auth/resend-otp`,
         {
           email,
         }
