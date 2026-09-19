@@ -3,7 +3,7 @@ const Subscription = require("../models/Subscription");
 const getCurrentSubscription = async (req, res) => {
   try {
     const subscription = await Subscription.findOne({
-      user: req.user._id,
+      user: req.user.userId,
       status: "active",
     }).sort({ createdAt: -1 });
 

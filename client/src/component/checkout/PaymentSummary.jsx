@@ -96,7 +96,6 @@ const PaymentSummary = ({ plan, billing }) => {
           navigate("/dashboard")
         } catch (error) {
           console.error("Verification error:", error);
-
           showToast( "error", error.response?.data?.message ||"Payment verification failed.")
           
         } finally {

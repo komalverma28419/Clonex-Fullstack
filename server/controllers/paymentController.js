@@ -4,7 +4,13 @@ const Subscription = require("../models/Subscription")
 
 const createOrder = async (req, res) => {
   try {
-    const { amount, planId, billing } = req.body;
+    const { amount, planId, billing } = req.body
+    console.log("Payment request:", {
+      amount,
+      planId,
+      billing,
+      userId: req.user?.userId,
+    });
 
     if (!amount || !planId || !billing) {
       return res.status(400).json({
@@ -17,19 +23,45 @@ const createOrder = async (req, res) => {
       amount: Math.round(Number(amount) * 100),
       currency: "INR",
       receipt: `clonex_${Date.now()}`,
+
       notes: {
         planId: String(planId),
         billing,
-        userId: String(req.user._id),
+        userId: String(req.user.userId),
       },
     };
 
     const order = await razorpay.orders.create(options);
 
+    await Subscription.create({
+      user: req.user.userId,
+
+      planId,
+
+      planName:
+      Number(planId) === 1
+        ? "Standard"
+        : Number(planId) === 2
+        ? "Extended"
+        : Number(planId) === 3
+        ? "Premium+"
+        : "Unknown Plan",
+
+      billing,
+
+      amount: Number(amount),
+
+      razorpayOrderId: order.id,
+
+      status: "created",
+    });
+
     return res.status(201).json({
       success: true,
+      message: "Payment order created successfully",
       order,
     });
+
   } catch (error) {
     console.error("Razorpay order error:", error);
 
@@ -38,7 +70,7 @@ const createOrder = async (req, res) => {
       message: "Failed to create payment order",
     });
   }
-}
+};
 
 
 const verifyPayment = async (req, res) => {
@@ -47,16 +79,27 @@ const verifyPayment = async (req, res) => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      planId,
-      planName,
-      billing,
-      amount,
     } = req.body;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment details are required",
+      });
+    }
+
+    const body =
+      razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac(
+        "sha256",
+        process.env.RAZORPAY_KEY_SECRET
+      )
       .update(body.toString())
       .digest("hex");
 
@@ -67,51 +110,50 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    const subscription = await Subscription.findOne({
+      razorpayOrderId: razorpay_order_id,
+      user: req.user.userId,
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription record not found.",
+      });
+    }
+
     const today = new Date();
 
     const endDate = new Date(today);
 
-    if (billing === "monthly") {
+    if (subscription.billing === "monthly") {
       endDate.setMonth(endDate.getMonth() + 1);
     } else {
       endDate.setFullYear(endDate.getFullYear() + 1);
     }
 
-    const subscription = await Subscription.create({
-      user: req.user._id,
+    subscription.razorpayPaymentId = razorpay_payment_id;
+    subscription.status = "active";
+    subscription.startDate = today;
+    subscription.endDate = endDate;
 
-      planId,
-      planName,
-
-      billing,
-
-      amount,
-
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-
-      status: "active",
-
-      startDate: today,
-      endDate,
-    });
+    await subscription.save();
 
     return res.status(200).json({
       success: true,
       message: "Payment verified successfully.",
       subscription,
     });
-  } catch (error) {
-    console.error("========== VERIFY PAYMENT ERROR ==========");
-  console.error(error);
-  console.error("Message:", error.message);
-  console.error("Stack:", error.stack);
 
-  return res.status(500).json({
-    success: false,
-    message: error.message || "Payment verification failed.",
+  } catch (error) {
+    console.error("Verify payment error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Payment verification failed.",
     });
   }
-}
+};
+
 
 module.exports = { createOrder, verifyPayment }

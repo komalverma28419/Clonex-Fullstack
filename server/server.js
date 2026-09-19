@@ -15,6 +15,13 @@ app.use(express.json())
 app.use("/api/auth", authRoutes)
 app.use("/api/payment", paymentRoutes)
 app.use("/api/subscription", subscriptionRoutes)
+
+app.get("/api/payment/test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Payment route is working"
+    })
+})
 app.get("/", (req, res) =>{
     res.json({
         message: "Clonex backend is running",
