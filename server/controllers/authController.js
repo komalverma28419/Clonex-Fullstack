@@ -6,12 +6,19 @@ const nodemailer = require("nodemailer")
 
 
 const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-})
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
+});
+
+
 const signup = async (req, res) =>{
     try{
         const{companyName, Username, email, phone, password, terms} = req.body
@@ -43,40 +50,53 @@ const signup = async (req, res) =>{
         ).toString();
 
         // -----------------------------------Create user-----------------------------------
-        const user = await User.create({
-            companyName,
-            Username,
-            email,
-            phone,
-            password: hashedPassword,
-            termsAccepted: true,
-            termsAcceptedAt: new Date(),
-            isEmailVerified: false,
-            emailVerificationOTP: otp,
-            emailVerificationOTPExpires: new Date(Date.now() + 10 * 60 * 1000 )
-        })
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "CloneX Email Verification OTP",
-            text: `Your CloneX verification OTP is ${otp}. It is valid for 10 minutes.`
-        })
-        res.status(201).json({
-            message: "Account created successfully. OTP sent to your email",
-            user:{
-                id: user._id,
-                companyName: user.companyName,
-                Username: user.Username,
-                email: user.email,
-                phone: user.phone
-            }
-        })
+        const user = new User({
+        companyName,
+        Username,
+        email,
+        phone,
+        password: hashedPassword,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
+        isEmailVerified: false,
+        emailVerificationOTP: otp,
+        emailVerificationOTPExpires: new Date(Date.now() + 10 * 60 * 1000),
+        });
 
-    }catch(error){
-        console.error("Signup error", error)
-        res.status(500).json({
-            message: "Server error"
-        })
+        // Email bhejo pehle
+        await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "CloneX Email Verification OTP",
+        text: `Your CloneX verification OTP is ${otp}. It is valid for 10 minutes.`,
+        });
+
+        // Email successful → user save
+        await user.save();
+
+        return res.status(201).json({
+        message: "Account created successfully. OTP sent to your email",
+        user: {
+            id: user._id,
+            companyName: user.companyName,
+            Username: user.Username,
+            email: user.email,
+            phone: user.phone,
+        },
+        });
+
+    }catch (error) {
+        console.error("Signup error:", error);
+
+        if (error.code === 11000) {
+            return res.status(400).json({
+            message: "Email already registered. Please login.",
+            });
+        }
+
+        return res.status(500).json({
+            message: error.message || "Server error",
+        });
     }
 }
 
