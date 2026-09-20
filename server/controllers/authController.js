@@ -2,22 +2,8 @@ const User = require("../models/User")
 const cloudinary = require("../config/cloudinary")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-const nodemailer = require("nodemailer")
+const { sendOTPEmail } = require("../services/emailService");
 
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  family: 4,
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-});
 
 
 const signup = async (req, res) =>{
@@ -65,12 +51,7 @@ const signup = async (req, res) =>{
         });
 
         // Email bhejo pehle
-        await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "CloneX Email Verification OTP",
-        text: `Your CloneX verification OTP is ${otp}. It is valid for 10 minutes.`,
-        });
+        await sendOTPEmail(email, otp);
 
         // Email successful → user save
         await user.save();
@@ -193,12 +174,7 @@ const resendOTP = async (req, res) => {
 
         await user.save();
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "CloneX New Verification OTP",
-            text: `Your new CloneX verification OTP is ${otp}. It is valid for 10 minutes.`
-        });
+        await sendOTPEmail(email, otp);
 
         res.status(200).json({
             message: "A new OTP has been sent to your email"
