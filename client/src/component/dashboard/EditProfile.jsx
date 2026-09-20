@@ -49,7 +49,7 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
       data.append("profilePhoto", file);
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/profile-photo",
+        `${import.meta.env.VITE_API_URL}/api/auth/profile-photo`,
         data,
         {
           headers: {
@@ -86,7 +86,7 @@ const EditProfile = ({ user, onBack, onProfileUpdate }) => {
       setIsPhotoLoading(true)
 
       const response = await axios.delete(
-        "http://localhost:5000/api/auth/profile-photo",
+        `${import.meta.env.VITE_API_URL}/api/auth/profile-photo`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
