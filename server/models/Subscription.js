@@ -31,7 +31,7 @@ const subscriptionSchema = new mongoose.Schema(
         },
         razorpayOrderId: {
             type: String,
-            required: true,
+            default: "" 
         },
         razorpayPaymentId: {
             type: String,
