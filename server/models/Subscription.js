@@ -18,7 +18,7 @@ const subscriptionSchema = new mongoose.Schema(
         },
         billing: {
             type: String,
-            enum: ["monthly", "annually"],
+            enum: ["trial","monthly", "annually"],
             required: true
         },
         amount: {
@@ -41,6 +41,10 @@ const subscriptionSchema = new mongoose.Schema(
             type: String,
             enum: ["created", "active", "failed", "cancelled", "expired"],
             default: "created",
+        },
+        isTrial: {
+            type: Boolean,
+            default: false,
         },
         startDate: {
             type: Date,
