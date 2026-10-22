@@ -58,16 +58,6 @@ const userSchema = new mongoose.Schema(
         termsAcceptedAt: {
             type: Date
         },
-        isEmailVerified: {
-            type: Boolean,
-            default: false
-        },
-        emailVerificationOTP: {
-            type: String
-        },
-        emailVerificationOTPExpires: {
-            type: Date
-        }
     },
     {
         timestamps: true

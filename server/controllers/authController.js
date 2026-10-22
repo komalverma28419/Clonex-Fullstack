@@ -2,233 +2,112 @@ const User = require("../models/User")
 const cloudinary = require("../config/cloudinary")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-const { sendOTPEmail } = require("../services/emailService");
 
 
 
-const signup = async (req, res) =>{
-    try{
-        const{companyName, Username, email, phone, password, terms} = req.body
-        // ----------------------------------Check required fields------------------------------------
-        if(!companyName || !Username || !email || !phone || !password){
+const signup = async (req, res) => {
+    try {
+        const { companyName, Username, email, phone, password, terms } = req.body;
+
+        if (!companyName || !Username || !email || !phone || !password) {
             return res.status(400).json({
-                message : "All fields are required"
-            })
-            
+                message: "All fields are required"
+            });
         }
-        // --------------------------------------Check Terms & Conditions--------------------------
-        if(!terms){
+
+        if (!terms) {
             return res.status(400).json({
                 message: "You must accept terms & Conditions and Privacy Policy"
-            })
+            });
         }
-        //----------------------------------- Check existing user-------------------------------
 
-        const existingUser = await User.findOne({email})
-        if(existingUser){
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
             return res.status(400).json({
-                message: "User already exist"
-            })
+                message: "User already exists. Please login."
+            });
         }
-        //--------------------------------------------- Hash password------------------------------
-        const hashedPassword = await bcrypt.hash(password, 10)
-        const otp = Math.floor(
-            100000 + Math.random() * 900000
-        ).toString();
 
-        // -----------------------------------Create user-----------------------------------
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const user = new User({
-        companyName,
-        Username,
-        email,
-        phone,
-        password: hashedPassword,
-        termsAccepted: true,
-        termsAcceptedAt: new Date(),
-        isEmailVerified: false,
-        emailVerificationOTP: otp,
-        emailVerificationOTPExpires: new Date(Date.now() + 10 * 60 * 1000),
+            companyName,
+            Username,
+            email,
+            phone,
+            password: hashedPassword,
+            termsAccepted: true,
+            termsAcceptedAt: new Date(),
         });
 
-        // Email bhejo pehle
-        await sendOTPEmail(email, otp);
-
-        // Email successful → user save
         await user.save();
 
         return res.status(201).json({
-        message: "Account created successfully. OTP sent to your email",
-        user: {
-            id: user._id,
-            companyName: user.companyName,
-            Username: user.Username,
-            email: user.email,
-            phone: user.phone,
-        },
+            message: "Account created successfully. Please login.",
+            user: {
+                id: user._id,
+                companyName: user.companyName,
+                Username: user.Username,
+                email: user.email,
+                phone: user.phone
+            }
         });
 
-    }catch (error) {
+    } catch (error) {
         console.error("Signup error:", error);
 
         if (error.code === 11000) {
             return res.status(400).json({
-            message: "Email already registered. Please login.",
+                message: "Email already registered. Please login."
             });
         }
 
         return res.status(500).json({
-            message: error.message || "Server error",
-        });
-    }
-}
-
-
-const verifyEmailOTP = async (req, res) => {
-    try {
-        const { email, otp } = req.body;
-
-        if (!email || !otp) {
-            return res.status(400).json({
-                message: "Email and OTP are required"
-            });
-        }
-
-        const user = await User.findOne({ email });
- 
-
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
-        }
-
-        if (user.isEmailVerified) {
-            return res.status(400).json({
-                message: "Email is already verified"
-            });
-        }
-
-        if (
-            user.emailVerificationOTP !== otp ||
-            !user.emailVerificationOTPExpires ||
-            user.emailVerificationOTPExpires < new Date()
-        ) {
-            return res.status(400).json({
-                message: "Invalid or expired OTP"
-            });
-        }
-
-        user.isEmailVerified = true;
-        user.emailVerificationOTP = undefined;
-        user.emailVerificationOTPExpires = undefined;
-
-        await user.save();
-
-        res.status(200).json({
-            message: "Email verified successfully"
-        });
-
-    } catch (error) {
-        console.error("Email verification error:", error);
-
-        res.status(500).json({
-            message: "Server error"
+            message: error.message || "Server error"
         });
     }
 };
 
 
-const resendOTP = async (req, res) => {
-    try {
-        const { email } = req.body;
 
-        if (!email) {
+
+const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
             return res.status(400).json({
-                message: "Email is required"
+                message: "Email and password are required"
             });
         }
 
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
-        }
-
-        if (user.isEmailVerified) {
-            return res.status(400).json({
-                message: "Email is already verified"
-            });
-        }
-
-        const otp = Math.floor(
-            100000 + Math.random() * 900000
-        ).toString();
-
-        user.emailVerificationOTP = otp;
-
-        user.emailVerificationOTPExpires = new Date(
-            Date.now() + 10 * 60 * 1000
-        );
-
-        await user.save();
-
-        await sendOTPEmail(email, otp);
-
-        res.status(200).json({
-            message: "A new OTP has been sent to your email"
-        });
-
-    } catch (error) {
-        console.error("Resend OTP error:", error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
-};
-
-const login = async (req, res) =>{
-    try{
-        const { email, password } = req.body
-        //----------------------------------- Check required fields---------------------------------
-        if(!email || !password){
-            return res.status(400).json({
-                message: "Email ans Password are required"
-            })
-        }
-        //-------------------------------find User----------------------------------------------
-        const user = await User.findOne({email})
-        if(!user){
             return res.status(401).json({
                 message: "Invalid email or password"
-            })
+            });
         }
 
-        if (!user.isEmailVerified) {
-            return res.status(403).json({
-                message: "Please verify your email before logging in"
-            })
-        }
-        //-----------------------------compare password-------------------------------------------
         const isPasswordCorrect = await bcrypt.compare(
             password,
             user.password
-        )
-        if(!isPasswordCorrect){
+        );
+
+        if (!isPasswordCorrect) {
             return res.status(401).json({
                 message: "Invalid email or password"
-            })
+            });
         }
 
-        //---------------------------------generate JWT--------------------------------------------
         const token = jwt.sign(
-            {userId: user._id},
+            { userId: user._id },
             process.env.JWT_SECRET,
-            {expiresIn: process.env.JWT_EXPIRES}
-        )
-        res.status(200).json({
+            { expiresIn: process.env.JWT_EXPIRES }
+        );
+
+        return res.status(200).json({
             message: "Login successful",
             token,
             user: {
@@ -238,14 +117,17 @@ const login = async (req, res) =>{
                 email: user.email,
                 phone: user.phone
             }
-        })
-    }catch(error){
-        console.error("Login error", error)
-        res.status(500).json({
-            message: "server error"
-        })
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        return res.status(500).json({
+            message: "Server error"
+        });
     }
-}
+};
+
 
 
 const getProfile = async(req,res) =>{
@@ -423,4 +305,4 @@ const deleteProfilePhoto = async (req, res) => {
   }
 }
 
-module.exports = {signup, login, getProfile, updateProfile, verifyEmailOTP, resendOTP, uploadProfilePhoto, deleteProfilePhoto}
+module.exports = {signup, login, getProfile, updateProfile,  uploadProfilePhoto, deleteProfilePhoto}
