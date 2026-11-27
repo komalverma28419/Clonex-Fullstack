@@ -73,14 +73,10 @@ const Signup = () => {
         }
       )
       console.log("signup successful:", response.data);
+      showToast("success", "Account created successfully! Please login.")
 
-      showToast("success","Account created successfully. OTP sent to your email.")
-
-      navigate("/verify-email", {
-        state: {
-          email: formData.email,
-        },
-      })
+      navigate("/");
+      openLogin();
       
     } catch (error) {
       console.error("Signup error", error)

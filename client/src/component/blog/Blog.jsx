@@ -48,9 +48,9 @@ const Blog = () => {
             </div>
 
             <h1 className="mx-auto mt-2 max-w-4xl text-3xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white md:text-4xl lg:text-[46px]">
-              Ideas that help you
+              Ideas That Help You
               <span className="block text-blue-700 dark:border-blue-400/20">
-                build better.
+                Build Better.
               </span>
             </h1>
 
